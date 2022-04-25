@@ -7,6 +7,7 @@
 02_Lesson_Text_Preprocessing_NLTK/
 03_Lesson_Text_Transformation_Exploration/
 04_Lesson_Dashboarding/
+data/
 
 # alte Jupyter Notebook Datei
 04_DS_Project_Scraper_Selenium.ipynb

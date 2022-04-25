@@ -53,19 +53,55 @@ def get_place():
     return raw_place
 
 
+def get_place_h2(title_id):
+    raw_place = driver.find_element(By.ID, title_id).text
+    return raw_place
+
+
 # Function for extracting place description of webpage
-def get_content():
+def get_full_content():
+    # list of substrings that appear in elements that should not be saved but still are in the only container that
+    # that contains everything else. They can't be excluded in clean_content_text function because part of the text
+    # changes for each location.
+    substring_list = ['Great places to visit in',
+                      'Related tailor-made travel itineraries for',
+                      'Discover more places related to',
+                      'The Rough Guide to',
+                      'Find even more inspiration for']
     content_text = ''
     content_element = driver.find_element(By.CLASS_NAME, 'DestinationPageContent')
-    raw_text = content_element.find_elements(By.TAG_NAME, 'p')
-    for paragraph in raw_text:
-        content_text += str(' ' + paragraph.text)
+    raw_text = content_element.find_elements(By.TAG_NAME, 'p, h2, h3, h4')
+    for element in raw_text:
+        if not any(substring in element.text for substring in substring_list):
+            content_text += str(' ' + element.text.strip())
+    #print(content_text)
+    return content_text
+
+
+def get_content_between_headlines(title_id):
+    # h2 element with id that contains title (all lower case and - instead of ' ')
+    content_text = ''
+    xpath = '//*[@id="{0}"]'.format(title_id)
+    start_element = driver.find_element(By.XPATH, xpath)
+    next_elements = start_element.find_elements(By.XPATH, xpath + '/following-sibling::*')
+
+    for element in next_elements:
+        if element.tag_name == 'h2':
+            # break while loop if next element is a h2
+            break
+        content_text += str(' ' + element.text.strip())
+    return content_text
+
+
+def clean_content_text(content_text):
     content_text = ' '.join(content_text.splitlines())
     content_text = content_text.replace(';', ' -')
+    content_text = content_text.replace("Book your individual trip, stress-free with local travel experts", '')
     content_text = content_text.replace("In-depth, easy-to-use travel guides filled with expert advice.", '')
     content_text = content_text.replace("Use Rough Guides' trusted partners for great rates", '')
+    content_text = content_text.replace("Continue reading to find out more about...", '')
+    content_text = content_text.replace("Planning on your own? Prepare for your trip", '')
     content_text = content_text.strip()
-    #print(content_text)
     return content_text
 
 
@@ -101,11 +137,26 @@ if __name__ == '__main__':
             print('Processing scraping of page {0} of {1}'.format(count, len(links)))
             driver.get(link)
 
-            # Get header text (place name) of page
-            place = get_place()
+            if '#' in link:
+                print('link to h2:')
+                # This link only refers to a part of the page.
+                # Only content between the h2 Headline and the next h2 should be extracted
+                title_id = link.split('#')[1]
 
-            # Get content text (place description) of page
-            content = get_content()
+                # get place name
+                place = get_place_h2(title_id)
+
+                # get content until next h2
+                content_raw = get_content_between_headlines(title_id)
+                content = clean_content_text(content_raw)
+
+            else:
+                # Get header text (place name) of page
+                place = get_place()
+
+                # Get content text (place description) of page
+                content_raw = get_full_content()
+                content = clean_content_text(content_raw)
 
             # Append place and content to list
             lst.append([link, place, content])
@@ -130,6 +181,10 @@ if __name__ == '__main__':
         exit()
 
     except Exception as e:
+        print(e)
         # Catch Error and safely close script
         print('\nThe program has encountered an error')
+        print('trying to Export scraped data to csv')
+        save_to_csv(lst, dest_path)
+        print('done')
         exit()
