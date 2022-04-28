@@ -16,19 +16,31 @@ def parse_args():
     parser._action_groups.pop()
     requirements = parser.add_argument_group('requirements')
     requirements.add_argument('-s',
-                         dest="source_path",
-                         type=str,
-                         help="Path to the csv file containing the links to be scraped.",
-                         required=True)
-
+                              dest="source_path",
+                              type=str,
+                              help="Path to the csv file containing the links to be scraped.",
+                              required=True)
+    requirements.add_argument('-d',
+                              dest="dest_path",
+                              type=str,
+                              help="Path to directory where the scraped data as csv file should be saved.",
+                              required=True)
     args = parser.parse_args()
 
     source_path = args.source_path
     if not source_path.endswith(".csv"):
-        print('\n\nInvalid use. You need to pass the path of the csv file. For more information see help '
+        print('\n\nInvalid use of -s flag. You need to pass the path of the csv file. For more information see help '
               'accessible via flag "-h"\n\n')
         os.system('python scraper.py -h')
         quit()
+
+    dest_path = args.dest_path
+    if dest_path.endswith(".csv"):
+        print('\n\nInvalid use of -d flag. You need to pass the path of the directory where the csv file (containing '
+              'the scraped data) should be saved. For more information see help accessible via flag "-h"\n\n')
+        os.system('python scraper.py -h')
+        quit()
+
     return args
 
 
@@ -49,7 +61,7 @@ def skip_cookie():
 # Function for extracting place name of webpage
 def get_place():
     raw_place = driver.find_element(By.XPATH, '/html/body/div[1]/div/div/div[4]/div/section[1]/div/div/main/div/section/h1').text
-    #print(raw_place)
+    # print(raw_place)
     return raw_place
 
 
@@ -74,7 +86,7 @@ def get_full_content():
     for element in raw_text:
         if not any(substring in element.text for substring in substring_list):
             content_text += str(' ' + element.text.strip())
-    #print(content_text)
+    # print(content_text)
     return content_text
 
 
@@ -106,16 +118,19 @@ def clean_content_text(content_text):
 
 
 # Function for saving scraped data to csv
-def save_to_csv(lst, dest_path):
+def save_to_csv(lst, destination_file_path):
     data = pd.DataFrame(lst, columns=['Link', 'Place', 'Content'])
-    destination_file_path = dest_path + "/results.csv"
     data.to_csv(destination_file_path, header=['Link', 'Place', 'Content'], encoding='utf-8-sig')
 
 
 if __name__ == '__main__':
     args = parse_args()
     source_path = args.source_path
-    dest_path = source_path.rsplit('/', 1)[0]
+    raw_dest_path = args.dest_path
+    if raw_dest_path.endswith('"'):
+        raw_dest_path = raw_dest_path[:-1]
+    dest_path = raw_dest_path + "\\" + "results.csv"
+    # print("Destination Path: ", dest_path)
     count = 1
     lst = []
     start_time = time.time()
@@ -138,7 +153,6 @@ if __name__ == '__main__':
             driver.get(link)
 
             if '#' in link:
-                print('link to h2:')
                 # This link only refers to a part of the page.
                 # Only content between the h2 Headline and the next h2 should be extracted
                 title_id = link.split('#')[1]
@@ -166,11 +180,11 @@ if __name__ == '__main__':
             count += 1
 
         # Save list as dataframe and export to csv
-        print('Exporting scraped data to csv')
+        print('Exporting scraped data to csv. Path of csv is following: ', dest_path)
         save_to_csv(lst, dest_path)
 
         # Exit driver
-        print('Finished scraping! Took %s min to scrape' % round((time.time() - start_time) / 60), 2)
+        print('Finished scraping! Took %s min to scrape' % round(((time.time() - start_time) / 60), 2))
         time.sleep(2)
         driver.quit()
 
