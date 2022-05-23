@@ -3,10 +3,12 @@
 .iws
 
 # Vorlesungsordner
-01_Lesson_Web-Crawling_Parsing_BeautifulSoup/
-02_Lesson_Text_Preprocessing_NLTK/
-03_Lesson_Text_Transformation_Exploration/
+01_Lesson_WebCrawling/
+02_Lesson_TextPreprocessing/
+03_Lesson_TextTransformationExploration/
 04_Lesson_Dashboarding/
+05_Lesson_AssociationAnalysis/
+06_Lesson_NamedEntityRecognition/
 data/
 
 # alte Jupyter Notebook Datei

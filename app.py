@@ -15,13 +15,13 @@ countries = df_prep['Country'].unique()
 # create HTML layout including all input and output components
 app.layout = html.Div([
     html.Div([
-        html.H1(children='Dashboard Datascience - Travel location finder'),
+        html.H1(children='Dashboard Data Science - Travel Location Finder'),
         # country filter for entire dashboard
         html.Div([
-            html.Label('Continent'),
+            html.Label('Countries'),
             dcc.Dropdown(
                 countries,
-                id='global_continent'
+                id='global_countries'
             )
         ])
     ]),
@@ -53,16 +53,16 @@ app.layout = html.Div([
     Output(component_id='wordcloud_no_ne', component_property='figure'),
     #Output(component_id='attraction_combinations', component_property='figure'),
     #Output(component_id='individual_visualisation', component_property='figure'),
-    Input(component_id='global_continent', component_property='value')
+    Input(component_id='global_countries', component_property='value')
     )
 def apply_global_filter(global_country):
     if global_country is not None:
-        no_ne = df_prep.loc[df_prep['Country'] == global_country]['no_NE_attractions_plain']
-        no_ne_text =
-        ne_img = WordCloud().generate()
-        no_ne_img =
+        ne = df_prep.loc[df_prep['Country'] == global_country]['named_entities_spacy_small_plain'].to_string()
+        no_ne = df_prep.loc[df_prep['Country'] == global_country]['no_NE_attractions_plain'].to_string()
+        ne_img = WordCloud().generate(ne)
+        no_ne_img = WordCloud().generate(no_ne)
         wordcloud_ne = px.imshow(ne_img)
-        wordcloud_no_ne = px.imshow(ne_img)
+        wordcloud_no_ne = px.imshow(no_ne_img)
     else:
         whole_str = str(x for x in attractions_ne.values())
         ne_img = WordCloud().generate(whole_str)
