@@ -5,14 +5,12 @@ from wordcloud import WordCloud
 
 app = Dash(__name__)
 
-continents = ['America', 'Europe', 'Africa', 'Asia']
+# read csv files to dataframes
+df_prep = pd.read_csv('data/results_df_prep.csv')
+df_comb = pd.read_csv('data/results_top_combinations.csv')
 
-attractions_ne = {
-    'America': 'NewYork, Seatle, Boston',
-    'Europe': 'Stuttgart, Lisabon, London, Berlin',
-    'Africa': 'Kapstadt, Johannesburg, Nairobi',
-    'Asia': 'Tokio, Shanghai, Wuhan'
-}
+# create list with countries for dropdown filter
+countries = df_prep['Country'].unique()
 
 # create HTML layout including all input and output components
 app.layout = html.Div([
@@ -22,7 +20,7 @@ app.layout = html.Div([
         html.Div([
             html.Label('Continent'),
             dcc.Dropdown(
-                continents,
+                countries,
                 id='global_continent'
             )
         ])
@@ -57,9 +55,12 @@ app.layout = html.Div([
     #Output(component_id='individual_visualisation', component_property='figure'),
     Input(component_id='global_continent', component_property='value')
     )
-def apply_global_filter(global_continent):
-    if global_continent is not None:
-        ne_img = WordCloud().generate(attractions_ne[global_continent])
+def apply_global_filter(global_country):
+    if global_country is not None:
+        no_ne = df_prep.loc[df_prep['Country'] == global_country]['no_NE_attractions_plain']
+        no_ne_text =
+        ne_img = WordCloud().generate()
+        no_ne_img =
         wordcloud_ne = px.imshow(ne_img)
         wordcloud_no_ne = px.imshow(ne_img)
     else:
