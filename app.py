@@ -6,6 +6,7 @@ from wordcloud import WordCloud
 from collections import Counter
 import ast
 import re
+import numpy as np
 
 # ignore setting on copy warning
 pd.options.mode.chained_assignment = None  # default='warn'
@@ -18,29 +19,39 @@ df_prep = pd.read_csv('data/results_df_prep.csv')
 df_comb = pd.read_csv('data/results_top_combinations.csv')
 
 # create list with countries for dropdown filter
-countries = df_prep['Country'].unique()
+countries = df_prep['Country'].unique().tolist()
+prep_countries = []
+for country in countries:
+    if country == 'usa':
+        prep_countries.append(country.upper())
+    else:
+        prep_countries.append(country.capitalize())
 
 # create HTML layout including all input and output components
 app.layout = dbc.Container([
     html.Div([
         dbc.Row(dbc.Col(
             html.Div([
-                html.H1(children='Dashboard Data Science - Travel Location Finder'),
+                html.H1('Dashboard Data Science - Travel Location Finder', style={'padding': '1em', 'text-align': 'center'}),
                 # country filter for entire dashboard
                 html.Div([
-                    html.Label('Countries'),
+                    html.H5('Filter'),
                     dcc.Dropdown(
-                        countries,
+                        prep_countries,
+                        searchable=True,
                         id='global_countries',
-                        style={'width': '50%'}
+                        style={'width': '50%'},
+                        placeholder='Select Country ...'
                     )
                 ])
             ])
         )),
+        html.Hr(),
         dbc.Row(
             [
                 dbc.Col(
                     html.Div([
+                        html.H4('Named Entities', style={'padding-top': '1.5em'}),
                         dbc.Checklist(
                             options=[
                                 {"label": "Average over documents", "value": 1}
@@ -48,14 +59,17 @@ app.layout = dbc.Container([
                             value=False,
                             id="absolute_ne",
                             switch=True,
+                            style={'fontSize': 12}
                         ),
                         dcc.Graph(
                             id='wordcloud_ne',
+                            config={"displayModeBar": False}
                         )
                     ])
                 ),
                 dbc.Col(
                     html.Div([
+                        html.H4('No Named Entities', style={'padding-top': '1.5em'}),
                         dbc.Checklist(
                             options=[
                                 {"label": "Average over documents", "value": 1}
@@ -63,9 +77,11 @@ app.layout = dbc.Container([
                             value=False,
                             id="absolute_no_ne",
                             switch=True,
+                            style={'fontSize': 12}
                         ),
                         dcc.Graph(
                             id='wordcloud_no_ne',
+                            config={"displayModeBar": False}
                         )
                     ])
                 )
@@ -74,19 +90,33 @@ app.layout = dbc.Container([
         dbc.Row(
             [
                 dbc.Col(
-                    dcc.Graph(
-                        id='attraction_combinations',
-                    )
-                ),
-                dbc.Col(
-                    dcc.Graph(
-                        id='cornerstones'
-                    )
+                    html.Div([
+                        html.H4('Popular Combinations'),
+                        dcc.Graph(
+                            id='attraction_combinations',
+                            config={"displayModeBar": False}
+                        )
+                    ])
                 ),
                 dbc.Col(
                     html.Div([
+                        html.H4('Popular Categories'),
                         dcc.Graph(
                             id='popular_categories',
+                            config={"displayModeBar": False}
+                        )
+                    ])
+                )
+            ]
+        ),
+        dbc.Row(
+            [
+                dbc.Col(
+                    html.Div([
+                        html.H4('Cornerstones'),
+                        dcc.Graph(
+                            id='cornerstones',
+                            config={"displayModeBar": False}
                         )
                     ])
                 )
@@ -103,7 +133,7 @@ app.layout = dbc.Container([
         Output(component_id='wordcloud_no_ne', component_property='figure'),
         Output(component_id='attraction_combinations', component_property='figure'),
         Output(component_id='cornerstones', component_property='figure'),
-        Output(component_id='popular_categories', component_property='figure'),
+        Output(component_id='popular_categories', component_property='figure')
     ],
     [
         Input(component_id='global_countries', component_property='value'),
@@ -115,6 +145,7 @@ app.layout = dbc.Container([
 def apply_global_filter(global_country, absolute_ne, absolute_no_ne):
     # filter Data
     if global_country is not None:
+        global_country = global_country.lower()
         df_filter = df_prep.loc[df_prep['Country'] == global_country]
         df_filter_pairs = df_comb.loc[df_comb['country'] == global_country]
     else:
@@ -140,24 +171,25 @@ def apply_global_filter(global_country, absolute_ne, absolute_no_ne):
         no_ne_dict = {k: v / total_rows for k, v in no_ne_dict.items()}
 
     # generate wordcloud from dict
-    ne_img = WordCloud().fit_words(ne_dict)
-    no_ne_img = WordCloud().fit_words(no_ne_dict)
+    ne_img = WordCloud(background_color='white', width=1080, height=540, random_state=100).fit_words(ne_dict)
+    no_ne_img = WordCloud(background_color='white', width=1080, height=540, random_state=100).fit_words(no_ne_dict)
 
     # generate figure for images
-    wordcloud_ne = px.imshow(ne_img, title='Named Entities', template=template) \
+    wordcloud_ne = px.imshow(ne_img, template=template) \
         .update_xaxes(visible=False).update_yaxes(visible=False)
-    wordcloud_ne.update_layout(margin={"l": 0, "r": 0, "t": 40, "b": 0})
-    wordcloud_no_ne = px.imshow(no_ne_img, title='No Named Entities', template=template) \
+    wordcloud_ne.update_layout(margin={"l": 0, "r": 0, "t": 0, "b": 0}, hovermode=False)
+    wordcloud_no_ne = px.imshow(no_ne_img, template=template) \
         .update_xaxes(visible=False).update_yaxes(visible=False)
-    wordcloud_no_ne.update_layout(margin={"l": 0, "r": 0, "t": 40, "b": 0})
+    wordcloud_no_ne.update_layout(margin={"l": 0, "r": 0, "t": 0, "b": 0}, hovermode=False)
 
     # barchart for pairings
     # sort dataframe for support and remove ' in tuple
     df_filter_pairs.sort_values(by='support', ascending=False, inplace=True)
     df_filter_pairs['itemsets'] = df_filter_pairs['itemsets'].str.replace("'", '')
     # create horizontal barchart with ascending order
-    comb = px.bar(df_filter_pairs.head(10), y='itemsets', x='support', title='popular pairs', template=template,
-                  orientation='h')
+    comb = px.bar(df_filter_pairs.head(10), y='itemsets', x='support', template=template, orientation='h')
+    comb.update_layout(yaxis_title='Itemset', xaxis_title='Support-Value', yaxis=dict(titlefont=dict(size=12)),
+                       xaxis=dict(titlefont=dict(size=12)))
     comb.update_layout(yaxis={'categoryorder': 'total ascending'})
 
     # build cornerstones
@@ -171,9 +203,9 @@ def apply_global_filter(global_country, absolute_ne, absolute_no_ne):
     cs.sort_values(by=0, ascending=False, inplace=True)
 
     # create barchart for cornerstones
-    corner_stones = px.bar(cs.head(10), y=cs.head(10).index, x=0, title='cornerstones', template=template,
-                           orientation='h')
-    corner_stones.update_layout(xaxis_title='Number of documents', yaxis_title='Named Entity')
+    corner_stones = px.bar(cs.head(10), y=cs.head(10).index, x=0, template=template, orientation='h')
+    corner_stones.update_layout(xaxis_title='Number of Documents', yaxis_title='Named Entity',
+                                yaxis=dict(titlefont=dict(size=12)), xaxis=dict(titlefont=dict(size=12)))
     corner_stones.update_layout(yaxis={'categoryorder': 'total ascending'})
 
     # barchart for attraction category count
@@ -184,9 +216,9 @@ def apply_global_filter(global_country, absolute_ne, absolute_no_ne):
     cat = pd.DataFrame.from_dict(n_category, orient='index')
     cat.sort_values(by=0, ascending=False, inplace=True)
     # create barchart
-    cat_count = px.bar(cat.head(10), y=cat.head(10).index, x=0, title='Category count', template=template,
-                       orientation='h')
-    cat_count.update_layout(xaxis_title='Number of occurrences', yaxis_title='Category')
+    cat_count = px.bar(cat.head(10), y=cat.head(10).index, x=0, template=template, orientation='h')
+    cat_count.update_layout(xaxis_title='Number of Occurrences', yaxis_title='Category',
+                            yaxis=dict(titlefont=dict(size=12)), xaxis=dict(titlefont=dict(size=12)))
     cat_count.update_layout(yaxis={'categoryorder': 'total ascending'})
 
     return wordcloud_ne, wordcloud_no_ne, comb, corner_stones, cat_count
