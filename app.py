@@ -215,8 +215,13 @@ def apply_global_filter(global_country, absolute_ne, absolute_no_ne):
         n_category = Counter(n_category) + Counter(doc)
     cat = pd.DataFrame.from_dict(n_category, orient='index')
     cat.sort_values(by=0, ascending=False, inplace=True)
+    cat_label_df = pd.DataFrame(cat.head(10).index, columns={'categories'})
+    labels = cat_label_df['categories'].values
+    cat_labels = [s.replace('_', ' ') for s in labels]
+    cat_labels = np.char.capitalize(cat_labels)
+
     # create barchart
-    cat_count = px.bar(cat.head(10), y=cat.head(10).index, x=0, template=template, orientation='h')
+    cat_count = px.bar(cat.head(10), y=cat_labels, x=0, template=template, orientation='h')
     cat_count.update_layout(xaxis_title='Number of Occurrences', yaxis_title='Category',
                             yaxis=dict(titlefont=dict(size=12)), xaxis=dict(titlefont=dict(size=12)))
     cat_count.update_layout(yaxis={'categoryorder': 'total ascending'})
