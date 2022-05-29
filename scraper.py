@@ -1,6 +1,5 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 import time
 import pandas as pd
@@ -49,13 +48,6 @@ def read_links(source):
     datatable = pd.read_csv(source)
     raw_links = datatable['roughguide link'].tolist()
     return raw_links
-
-
-# Function for skipping cookie banner (not needed)
-def skip_cookie():
-    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, "cf2Lf6")))
-    driver.find_element(By.CLASS_NAME, 'cf2Lf6').click()
-    print('>> Cookie-Banner successful skipped!')
 
 
 # Function for extracting place name of webpage
@@ -187,7 +179,6 @@ if __name__ == '__main__':
         print('Finished scraping! Took %s min to scrape' % round(((time.time() - start_time) / 60), 2))
         time.sleep(2)
         driver.quit()
-
 
     except KeyboardInterrupt:
         # Catch Keyboard Interrupt
