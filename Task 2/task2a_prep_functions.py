@@ -11,6 +11,7 @@ from nltk.stem import WordNetLemmatizer
 from nltk.corpus import wordnet
 from nltk.tokenize import sent_tokenize, word_tokenize
 from nltk.corpus import stopwords
+from nltk import ngrams
 from nltk.stem import PorterStemmer
 from nltk.probability import FreqDist
 from mlxtend.preprocessing import TransactionEncoder
@@ -68,7 +69,6 @@ def label_continent (row):
     return 'Other'
 
 
-
 def s_tokenize(column):
     ''' Convert text into sentence tokens
     
@@ -84,7 +84,6 @@ def s_tokenize(column):
     return token_column
 
 
-
 def w_full_tokenize(column):
     ''' Convert text with sentences into tokens
     
@@ -98,7 +97,6 @@ def w_full_tokenize(column):
     token_column = [word_tokenize(text) for text in column]
         
     return token_column
-
 
 
 def w_tokenize(column):
@@ -117,7 +115,6 @@ def w_tokenize(column):
         token_column.append([word_tokenize(sent) for sent in text])
         
     return token_column
-
 
 
 def w_column_tokenize(column):
@@ -141,7 +138,6 @@ def w_column_tokenize(column):
         text_column.append(token_column)
 
     return token_column
-
 
 
 def detokenize_w_to_s(column):
@@ -173,7 +169,6 @@ def detokenize_w_to_s(column):
     return text_column
 
 
-
 def remove_list_depth_after_tokenisation(column):
     ''' Reduce the list depth of a column by 1 level
     
@@ -199,7 +194,6 @@ def remove_list_depth_after_tokenisation(column):
     return token_column
 
 
-
 def lower_tokens_to_list(column):
     '''
     Normalizes tokens to lowercase and returns result as a list
@@ -221,7 +215,6 @@ def lower_tokens_to_list(column):
             list_low.append(lower_list)
         lower.append(list_low)
     return lower
-
 
 
 def keep_only_words(column):
@@ -253,7 +246,6 @@ def keep_only_words(column):
         text_column.append(text_in_line)
 
     return text_column
-
 
 
 def spelling_correction_suggestions(list_of_1grams, returning = False):
@@ -289,8 +281,7 @@ def spelling_correction_suggestions(list_of_1grams, returning = False):
     
     if returning:
         return misspelled_dict
-        
-        
+
         
 def spelling_correction(column, dict_words_to_correct):
     ''' Remove common spelling misstakes from colSumn
@@ -335,7 +326,6 @@ def spelling_correction(column, dict_words_to_correct):
     return new_column      
 
 
-
 def token_and_tag_to_list(column):
     '''Find word tags for tokens and safe them in list
     
@@ -363,7 +353,6 @@ def token_and_tag_to_list(column):
     return upper_tokens_pos_list
 
 
-
 def nltk_tag_to_wordnet_tag(nltk_tag):
     ''' Function to convert nltk tag to wordnet tag
     
@@ -389,7 +378,6 @@ def nltk_tag_to_wordnet_tag(nltk_tag):
         nltk.download('omw-1.4')
         nltk.download('wordnet')
         nltk_tag_to_wordnet_tag(nltk_tag)
-
 
 
 def lemmatize_to_list(column):
@@ -430,7 +418,6 @@ def lemmatize_to_list(column):
     return lemma_list
 
 
-
 def stemmed_token_to_list(column):
     ''' Funktion to stemm column tokens
     
@@ -456,7 +443,6 @@ def stemmed_token_to_list(column):
         stemmed_tokens.append(stemmed_list)
         
     return stemmed_tokens
-
 
 
 def remove_stopwords(column):
@@ -499,7 +485,6 @@ def remove_stopwords(column):
     return new_column
 
 
-
 def frequency_detection(column):
     """ Detect frequency in token list
     
@@ -525,7 +510,6 @@ def frequency_detection(column):
     return new_column
 
 
-
 def tokens_to_string(column):
     """ Transform token list to string representation
 
@@ -541,7 +525,6 @@ def tokens_to_string(column):
         new_column.append(' '.join(text))
 
     return new_column
-
 
 
 def one_hot_encoding(df, column_name):
@@ -633,6 +616,7 @@ def create_tfidf_matrix(df, count_docs):
 
     return df
 
+
 ######################################### DETERMINATION NAMED ENTETIES #####################################################
 
 
@@ -669,7 +653,6 @@ def named_entity_recognition_nltk(column):
         text_column.append(text_list)
 
     return text_column
-
 
                            
 def named_entity_recognition_spacy(column, dict_of_words = None):
@@ -747,7 +730,6 @@ def named_entity_recognition_spacy(column, dict_of_words = None):
     return text_column,text_column_plain, text_column2
 
 
-
 def filter_tokens_start_caps(column):
     ''' Identify all tokens with capital start
     
@@ -777,7 +759,6 @@ def filter_tokens_start_caps(column):
         new_column.append(text_list)
 
     return new_column
-
 
 
 def ne_ident_tokens(df):
@@ -816,7 +797,6 @@ def ne_ident_tokens(df):
     return new_column
 
 
-
 def unique_and_dict_count(column):
     new_column = []
     new_column2 = []
@@ -837,7 +817,6 @@ def unique_and_dict_count(column):
         new_column2.append(text_dict)
 
     return new_column, new_column2
-
 
 
 def detect_NE_missing(column_propbly_NE, column_NE):
@@ -904,7 +883,6 @@ def keep_nouns(column):
     return upper_tokens_pos_list
 
 
-
 def remove_words_from_sentences(df):
     ''' Remove word in list from sentences
     
@@ -935,7 +913,6 @@ def remove_words_from_sentences(df):
         text_list.append(sentence_list)
         
     return text_list
-
 
 
 def get_hypernyms(column):
@@ -1014,7 +991,6 @@ def get_hypernyms(column):
     return new_column, new_column_plain
 
 
-
 def transaction_encoding(column):
     ''' Function is encoding the column to a transaction matrix
     
@@ -1034,7 +1010,6 @@ def transaction_encoding(column):
     df = pd.DataFrame(te_ary, columns=te.columns_)
     
     return df
-
 
 
 def frequent_itemsets_apriori(df_encoded, min_support, length=2, support=0.01):
@@ -1060,8 +1035,7 @@ def frequent_itemsets_apriori(df_encoded, min_support, length=2, support=0.01):
                        (frequent_itemsets['support'] >= support) ]
     
     return frequent_itemsets
-    
-    
+
     
 def frequent_itemsets_fpgrowth(df_encoded, min_support, length=2, support=0.01):
     '''Creats frequent itemsets based on fpgrowth algorithm
@@ -1088,7 +1062,6 @@ def frequent_itemsets_fpgrowth(df_encoded, min_support, length=2, support=0.01):
     return frequent_itemsets
 
 
-
 def association_rules(df_frequent_itemsets, metric="lift", min_threshold=2):
     '''Creation of association rules
     
@@ -1105,11 +1078,97 @@ def association_rules(df_frequent_itemsets, metric="lift", min_threshold=2):
     return rules
 
 
+######################################### PREPROCESSING CLUSTERING #########################################
+
+
+def create_n_grams_to_list(column, length):
+    """ Create n-grams from tokens
+
+    Args:
+        column: Column to transform
+        length: Length of the n-grams builded
+
+    Returns:
+        n_grams: Column with n-grams
+    """
+
+    n_grams_list = []
+
+    for line in column:
+        n_grams = []
+
+        for token_list in line:
+            grams = list(ngrams(token_list, length))
+            if grams:
+                n_grams.append(grams)
+
+        n_grams_list.append(n_grams)
+
+    return n_grams_list
+
+
+def dataframe_for_training(encoded_frame, *args):
+    """ Shapes the ouput to a data frame for training classification
+
+    Args:
+        encoded_frame: Frame to bring to training shape
+        *args: Columns which should be appended as extra information
+
+    Returns:
+        df_merged: Dataframe ready for training
+    """
+
+    df_merged = encoded_frame
+
+    for arg in args:
+        df_merged = df_merged.join(arg)
+
+    return df_merged
+
+
+def list_to_string(column):
+    """ Convert list to string
+
+    Args:
+        df_column: Dataframe with column
+
+    Returns:
+        string for every transaction in list
+    """
+
+    return [','.join(map(str, l)) for l in column]
+
+
+def use_tfidfVectorizer(column):
+    """ Usage of tfidf vektor to transform dataframe
+
+    Args:
+       df: Dataframe to transform
+
+    Returns:
+        train_tf: Transformed dataframe
+    """
+
+    # Create the numericalizer TFIDF for lowercase
+    tfidf = TfidfVectorizer(decode_error='ignore', lowercase=True, min_df=2)
+
+    # Numericalize the train dataset
+    tfidf_list = tfidf.fit_transform(column.values.astype('U'))
+
+    # Build data frame
+    vocabulary = tfidf.vocabulary_
+    vocabulary_transposed = {y: x for x, y in vocabulary.items()}
+    train_tf = pd.DataFrame(tfidf_list.toarray())
+    train_tf = train_tf.rename(columns=vocabulary_transposed)
+
+    return train_tf
+
+
 ######################################### BONUS #########################################
 
 
 def automatic_mapping_NE_notNE(df):
-    ''' Automatic detetcion of NE and not NE
+    """ Automatic detetcion of NE and not NE
     
     Args:
         df: DataFrame to detect in
@@ -1117,7 +1176,7 @@ def automatic_mapping_NE_notNE(df):
     Returns:
         List -> Detections
 
-    '''
+    """
 
     new_column = []
 

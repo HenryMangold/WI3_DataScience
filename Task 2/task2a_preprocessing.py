@@ -154,6 +154,7 @@ class Preprocessing:
         self.__df['sent_without_NE'] = p.remove_words_from_sentences(self.__df[['sent_prepcorcessed_only_nouns', 'NE_preprocessed']])
         kombs, plain = p.get_hypernyms(self.__df['sent_without_NE'])
         self.__df_mapping['no_NE_attractions'] = kombs
+        self.__df_mapping['no_NE_attractions_plain'] = plain
         self.__df['no_NE_attractions_plain'] = plain
         unique, unique_dict = p.unique_and_dict_count(self.__df['no_NE_attractions_plain'])
         self.__df['no_NE_attractions_plain_unique'] = unique
