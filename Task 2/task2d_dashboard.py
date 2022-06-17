@@ -4,10 +4,8 @@ import dash_core_components as dcc
 import dash_html_components as html
 import dash_bootstrap_components as dbc
 import plotly.express as px
-import stylecloud as sc
 from matplotlib import pyplot as plt
 from wordcloud import WordCloud
-import PIL.Image
 import pandas as pd
 import numpy as np
 
@@ -22,6 +20,10 @@ from datetime import datetime as dt
 TEAM_MEMBERS = (
     "Jennifer", "Henry", "Samuel", "Tim"
 )
+
+clustering_model_list  = ["model 1", "model 2", "model 3", "model 4"]
+topic_model_list = ["model 1", "model 2", "model 3", "model 4"]
+
 
 df = px.data.tips()
 
@@ -57,9 +59,9 @@ app.layout = dbc.Container([
                                 children=[
                                     html.Div(id="clustering_dropdown_div",
                                              children=[
-                                                dcc.Dropdown(
-                                                    options=[{"label": "label", "value": "value"}],
-                                                    placeholder='Select clustering algorithm',
+                                                dcc.RadioItems(
+                                                    options=clustering_model_list,
+                                                    #placeholder='Select clustering algorithm',
                                                     id='dropdown_clustering'
                                                 )
                                             ]
@@ -68,8 +70,7 @@ app.layout = dbc.Container([
                                 ]
                             ),
                             html.Div(
-                            "Div 1.2",
-                            id="Div 1.2")
+                            id="clustering_div", children=[])
                         ]
                     ),
                     html.Div(
@@ -104,7 +105,7 @@ app.layout = dbc.Container([
                                      html.Div(id="topic_dropdown_div",
                                               children=[
                                                   dcc.Dropdown(
-                                                      options=[{"label": "label", "value": "value"}],
+                                                      options=topic_model_list,
                                                       placeholder='Select topic modeling algorithm',
                                                       id='dropdown_topic'
                                                   )
@@ -114,14 +115,15 @@ app.layout = dbc.Container([
                                  ]
                              ),
                              html.Div(
-                                 "Selected topic model",
-                                 id="topic_model_selected")
+                                 id="topic_model_selected", children=[]
+                                 )
                          ]
                      ),
                      html.Div(
-                         style={"display": "inline-block", "width": "70%"},
+                         style={"display": "inline-block", "width": "70%", "background-color": "black"},
                          children=[
                              html.Div(id="topic_graph_div",
+                                      style={"background-color": "black"},
                                       children=[
                                           dcc.Graph(id="topic_graph")
                                       ]
@@ -258,43 +260,31 @@ app.layout = dbc.Container([
 """         Dashboard           """
 # Callback Clustering Model
 @app.callback(
-    Output(component_id= "clustering_container", component_property="children"),
+    Output(component_id= "clustering_div", component_property="children"),
     Input(component_id="dropdown_clustering", component_property="value")
 
 )
-def update_graph(input):
-    output=input
+def update_graph(option_chosen):
+    output=option_chosen
     return output
 
-# Callback Topic Model
+# Callback Topic Model - wordcloud
 @app.callback(
-    Output(component_id= "topic_graph", component_property="figure"),
-    [Input(component_id="input_Jennifer", component_property="value"),
-     Input(component_id="input_Henry", component_property="value"),
-     Input(component_id="input_Samuel", component_property="value"),
-     Input(component_id="input_Tim", component_property="value")]
+    [Output(component_id= "topic_graph", component_property="figure"),
+    Output(component_id= "topic_model_selected", component_property="children")],
+    Input(component_id="dropdown_topic", component_property="value")
 )
-def update_graph(preference_Jennifer, preference_Henry, preference_Samuel, preference_Tim):
-    input_wordcloud = str(preference_Jennifer) + str(preference_Henry) + str(preference_Samuel) + str(preference_Tim)
-    print(input_wordcloud)
-    wordcloud = WordCloud().generate(input_wordcloud)
-    plt.figure(figsize=(2,1))
+
+def create_wordcloud(topic_model):
+    input_wordcloud = str(topic_model) + "rwveve wrfwrg fgwrgwrg gwrg wgw rwgbwrbwrbrb"
+    wordcloud = WordCloud(height=500, width=500).generate(input_wordcloud)
+    #plt.figure(figsize=(2,1))
     plt.imshow(wordcloud, interpolation="bilinear")
     plt.axis("off")
     wordcloud_img = px.imshow(wordcloud).update_xaxes(visible=False).update_yaxes(visible=False)
     wordcloud_img.update_layout(margin={"l": 0, "r": 0, "t": 0, "b": 0}, hovermode=False)
-    return wordcloud_img
+    return wordcloud_img, str(topic_model)
 
-#Code to create wordclouds
-"""sample_text = "Though its cities draw the most tourists – New York, New Orleans, Miami, Los Angeles and San Francisco are all incredible destinations in their own right – America is above all a land of stunningly diverse and achingly beautiful landscapes . In one nation you have the mighty Rockies and spectacular Cascades, the vast, mythic desert landscapes of the Southwest, the endless, rolling plains of Texas and Kansas, the tropical beaches and Everglades of Florida, the giant redwoods of California and the sleepy, pristine villages of New England. You can soak up the mesmerizing vistas in Crater Lake, Yellowstone and Yosemite national parks, stand in awe at the Grand Canyon, hike the Black Hills, cruise the Great Lakes, paddle in the Mississippi, surf the gnarly breaks of Oahu and get lost in the vast wilderness of Alaska. Or you could easily plan a trip that focuses on the out-of-the-way hamlets, remote prairies, eerie ghost towns and forgotten byways that are every bit as “American” as its showpiece icons and monuments. The sheer size of the country prevents any sort of overarching statement about the typical American experience, just as the diversity of its people undercuts any notion of the typical American. Icons as diverse as Mohammed Ali, Louis Armstrong, Sitting Bull, Hillary Clinton, Michael Jordan, Madonna, Martin Luther King, Abraham Lincoln, Elvis Presley, Mark Twain, John Wayne and Walt Disney continue to inspire and entertain the world, and everyone has heard of the blues, country and western, jazz, rock ’n’ roll and hip-hop – all American musical innovations. There are Irish Americans, Italian Americans, African Americans, Chinese Americans and Latinos, Texan cowboys and Bronx hustlers, Seattle hipsters and Alabama pastors, New England fishermen, Las Vegas showgirls and Hawaiian surfers. Though it often sounds clichéd to foreigners, the only thing that holds this bizarre federation together is the oft-maligned “American Dream”. While the USA is one of the world’s oldest still-functioning democracies and the roots of its European presence go back to the 1500s, the palpable sense of newness here creates an odd sort of optimism, wherein anything seems possible and fortune can strike at any moment.Indeed, aspects of American culture can be difficult for many visitors to understand, despite the apparent familiarity: its obsession with guns; the widely held belief that “government” is bad; the real, genuine pride in the American Revolution and the US Constitution, two hundred years on; the equally genuine belief that the USA is the “greatest country on earth”; the wild grandstanding of its politicians (especially at election time); and the bewildering contradiction of its great liberal and open-minded traditions with laissez-faire capitalism and extreme cultural and religious conservatism. That’s America: diverse, challenging, beguiling, maddening at times, but always entertaining and always changing. And while there is no such thing as a typical American person or landscape, there can be few places where strangers can feel so confident of a warm reception. "
-mask = np.array(PIL.Image.open("Weltkarte.jpeg"))
-wordcloud = WordCloud(mask=mask).generate(sample_text)
-plt.figure(figsize=(10,5))
-plt.imshow(wordcloud, interpolation="bilinear")
-plt.axis("off")
-plt.savefig("wordcloud.png")
-fig = PIL.Image.open("wordcloud.png")
-fig.show()"""
 
 # Callback Dream  Destination Finder
 @app.callback(
