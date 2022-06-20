@@ -925,7 +925,7 @@ def get_hypernyms(column):
         list -> List with found not-NE nouns
     '''
 
-    list_of_tourist_categories = [['point_of_view'],['buying'], ['entertainment'], ['party'],['resort_area'], ['building_complex'],['location', 'space'],['location', 'outline'], ['jungle'],['vantage'], ['geographic_point'], ['animal'], ['passageway'],['cavity'],['defensive_structure'],['sport'], ['body_of_water'], ['urban_area'],['approach'],['tract'], ['country'], ['wilderness'], ['biome'], ['land'], ['headwater'], ['topographic_point'], ['geological_formation'], ['food'], ['vegetation'], ['building'], ['structure', 'bridge'], ['place_of_business'], ['ship']]
+    list_of_tourist_categories = [['point_of_view'],['buying'], ['entertainment'], ['party'],['resort_area'], ['building_complex'],['location', 'space'],['location', 'outline'], ['jungle'],['vantage'], ['geographic_point'], ['animal'], ['passageway'],['cavity'],['defensive_structure'],['sport'], ['body_of_water'], ['urban_area'],['approach'],['tract'], ['country'], ['wilderness'], ['biome'], ['land'], ['headwater'], ['topographic_point'], ['geological_formation'], ['food'], ['vegetation'], ['building'], ['structure', 'bridge'], ['place_of_business'], ['ship'],['place_of_worship']]
 
     new_column = []
     new_column_plain = []
@@ -939,7 +939,10 @@ def get_hypernyms(column):
             synsets_list = wordnet.synsets(sentence)
 
             if synsets_list != [] and not sentence in ['home', 'place', 'site', 'spot', 'stretch', 'food', 'de', 'la']:
-                synset_all_list = synsets_list[0].hypernym_paths()
+                synset_all_list=[]
+                for i in synsets_list:
+                    synset_all_list.extend(i.hypernym_paths())
+
                 synset_flat_list = []
 
                 for x in synset_all_list:
@@ -953,10 +956,7 @@ def get_hypernyms(column):
                         print(i)
                         continue
 
-                    if type != 'n':
-                        synset_flat_list_names = []
-                        break
-                    else: 
+                    if type == 'n':
                         synset_flat_list_names.append(name)
 
                 if synset_flat_list_names != []:
@@ -1099,8 +1099,8 @@ def create_n_grams_to_list(column, length):
 
         for token_list in line:
             grams = list(ngrams(token_list, length))
-            if grams:
-                n_grams.append(grams)
+            #if grams:
+            n_grams.append(grams)
 
         n_grams_list.append(n_grams)
 

@@ -1,5 +1,6 @@
 import pandas as pd
-from sklearn.cluster import KMeans,DBSCAN,AffinityPropagation,AgglomerativeClustering,Birch,BisectingKMeans,MiniBatchKMeans,MeanShift, OPTICS,SpectralClustering
+from sklearn.cluster import KMeans,DBSCAN,AffinityPropagation,AgglomerativeClustering,Birch,MiniBatchKMeans,MeanShift, OPTICS,SpectralClustering
+    #BisectingKMeans,
 
 class Clustering:
 
@@ -51,13 +52,14 @@ class Clustering:
                     df.loc[count,"labels"] = self.cluster_birch(data['data'])
                     count += 1
 
-                elif cluster_type == "BisectingKMeans":
-                    df.loc[count, "wordreduction"] = data['wordreduction']
-                    df.loc[count, "grams"] = data['grams']
-                    df.loc[count, "matrix"] = data['matrix']
-                    df.loc[count,"cluster_type"] = "BisectingKMeans"
-                    df.loc[count,"labels"] = self.cluster_bkmeans(data['data'])
-                    count += 1
+                # Only available in new version of scikitlearn, not compatible
+                #elif cluster_type == "BisectingKMeans":
+                   # df.loc[count, "wordreduction"] = data['wordreduction']
+                   # df.loc[count, "grams"] = data['grams']
+                   # df.loc[count, "matrix"] = data['matrix']
+                   # df.loc[count,"cluster_type"] = "BisectingKMeans"
+                   # df.loc[count,"labels"] = self.cluster_bkmeans(data['data'])
+                   # count += 1
 
                 elif cluster_type == "MiniBatchKMeans":
                     df.loc[count, "wordreduction"] = data['wordreduction']
@@ -97,51 +99,51 @@ class Clustering:
         return df
 
 
-    def cluster_kmeans(self, data, n_clusters):
-        pred = KMeans(n_clusters = n_clusters).fit_predict(data)
+    def cluster_kmeans(self, data, n_clusters=8):
+        pred = KMeans(n_clusters = n_clusters).fit_predict(data, n_clusters, random_state=5)
         return pred
 
 
-    def cluster_dbscan(self, data):
-        pred = DBSCAN().fit_predict(data)
+    def cluster_dbscan(self, data, eps=0.5, min_samples=5):
+        pred = DBSCAN().fit_predict(data, eps, min_samples, random_state=5)
         return pred
 
 
-    def cluster_ap(self, data):
-        pred = AffinityPropagation().fit_predict(data)
+    def cluster_ap(self, data, damping=0.5, max_iter=200, convergence_iter=15):
+        pred = AffinityPropagation().fit_predict(data, damping, max_iter, convergence_iter, random_state=5)
         return pred
 
 
-    def cluster_ac(self, data):
-        pred = AgglomerativeClustering().fit_predict(data)
+    def cluster_ac(self, data, n_clusters=2):
+        pred = AgglomerativeClustering().fit_predict(data, n_clusters, random_state=5)
         return pred
 
 
-    def cluster_birch(self, data):
-        pred = Birch().fit_predict(data)
+    def cluster_birch(self, data, threshold=0.5, branching_factor=50, n_clusters=3):
+        pred = Birch().fit_predict(data, threshold, branching_factor, n_clusters, random_state=5)
+        return pred
+
+    # Only available in new version of scikitlearn, not compatible
+    #def cluster_bkmeans(self, data):
+    #    pred = BisectingKMeans().fit_predict(data, random_state=5)
+    #    return pred
+
+
+    def cluster_mbkmeans(self, data, n_clusters=8, max_iter=100, batch_size=1024):
+        pred = MiniBatchKMeans().fit_predict(data, n_clusters, max_iter, batch_size, random_state=5)
         return pred
 
 
-    def cluster_bkmeans(self, data):
-        pred = BisectingKMeans().fit_predict(data)
+    def cluster_ms(self, data, max_iter=300):
+        pred = MeanShift().fit_predict(data, max_iter, random_state=5)
         return pred
 
 
-    def cluster_mbkmeans(self, data):
-        pred = MiniBatchKMeans().fit_predict(data)
+    def cluster_optics(self, data, min_samples=5):
+        pred = OPTICS().fit_predict(data, min_samples, random_state=5)
         return pred
 
 
-    def cluster_ms(self, data):
-        pred = MeanShift().fit_predict(data)
-        return pred
-
-
-    def cluster_optics(self, data):
-        pred = OPTICS().fit_predict(data)
-        return pred
-
-
-    def cluster_sc(self, data):
-        pred = SpectralClustering().fit_predict(data)
+    def cluster_sc(self, data, n_clusters=3, n_init=10):
+        pred = SpectralClustering().fit_predict(data, n_clusters,n_init,random_state=5)
         return pred

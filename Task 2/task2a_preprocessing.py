@@ -235,6 +235,7 @@ class Preprocessing:
         """
 
         self.__read_data(input_dir)
+        self.__mapping_country_continent()
 
         if wordreduction == 'Lemmatization':
             self.__preprocess_raw_data_lemma()
@@ -242,6 +243,8 @@ class Preprocessing:
             self.__preprocess_raw_data_stemming()
         else:
             raise ValueError('No valid wordreduction selected.')
+
+        self.__create_no_NE_tourist_attractions()
 
 
     def create_train_data(self, grams = '1-grams', train_matrix = 'True/False'):
@@ -255,8 +258,6 @@ class Preprocessing:
             DataFrame -> DataFrame containing the training set
 
         """
-
-        self.__create_no_NE_tourist_attractions()
 
         if grams == '1-grams':
             self.__create_one_grams()
@@ -273,3 +274,8 @@ class Preprocessing:
             return self.__create_true_false_matrix()
         else:
             raise ValueError('No valid train matrix selected.')
+
+
+if __name__ == '__main__':
+    prep_lemma = Preprocessing()
+    prep_lemma.preprocess_data('results_scrapping.csv', 'Lemmatization')
