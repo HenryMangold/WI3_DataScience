@@ -1,4 +1,4 @@
-# import libraries
+######################## IMPORTS #######################################################################################
 import dash
 from dash import dcc
 from dash import html
@@ -7,29 +7,111 @@ import plotly.express as px
 from matplotlib import pyplot as plt
 from wordcloud import WordCloud
 import pandas as pd
+from dash.exceptions import PreventUpdate
 import numpy as np
-from sklearn.manifold import TSNE
+from sklearn.manifold import MDS
 
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State
 from plotly import graph_objs as go
+from ast import literal_eval
 from plotly.graph_objs import *
 from datetime import datetime as dt
+import requests
+import urllib.parse
 
 
-# import and clean data
-
+######################## IMPORT AND CLEAN DATA ####################################################################################
 TEAM_MEMBERS = (
     "Jennifer", "Henry", "Samuel", "Tim"
 )
 
-clustering_model_list  = ["model 1", "model 2", "model 3", "model 4"]
-topic_model_list = ["model 1", "model 2", "model 3", "model 4"]
+token = "pk.eyJ1IjoiYXN6ZW5pYSIsImEiOiJjbDRtZHg1aTExMjIzM29ueGZ3aHB6ZXZsIn0.ehBctjUFzibYKM8zjueniw"  # you need your own token
+
+#Topic Modelling
+df_lsa = pd.read_csv('output/lsa_example_matrix.csv', header= None)
+df_lda = pd.read_csv('output/lda_example_matrix.csv', header= None)
+topic_model_list = ["LSA", "LDA"]
+
+#Clustering
+df_cluster = pd.read_csv('output/results_2a.csv', index_col=0, converters={'labels':literal_eval})
+clustering_model_list = []
+index = 1
+for ele in df_cluster["cluster_type"]:
+    clustering_model_list.append(ele+" "+str(index))
+    index +=1
+
+#Data Mapping
+df_mapping = pd.read_csv('output/mapping_data_lemma.csv', index_col=0, converters={'no_NE_attractions':literal_eval})
+
+lon = []
+lat = []
+
+for place in df_mapping['Place']:
+    try:
+        place = place.replace(' Travel Guide', '').replace(' and around', '')
+
+        if place == 'Basilique-Cathédrale Marie-Reine-du-Monde':
+            url = 'https://nominatim.openstreetmap.org/search/' + urllib.parse.quote('Montreal') + '?format=json'
+
+        elif place == 'Swedish Lapland':
+            url = 'https://nominatim.openstreetmap.org/search/' + urllib.parse.quote('Kiruna') + '?format=json'
+
+        elif place == 'The Musée du Louvre':
+            url = 'https://nominatim.openstreetmap.org/search/' + urllib.parse.quote('Paris') + '?format=json'
+
+        elif place == 'Champagne and the Ardennes':
+            url = 'https://nominatim.openstreetmap.org/search/' + urllib.parse.quote('Ardennes') + '?format=json'
+
+        elif place == 'The Aeolian Islands':
+            url = 'https://nominatim.openstreetmap.org/search/' + urllib.parse.quote('Aeolian Islands') + '?format=json'
+
+        elif place == 'The Costa Smeralda':
+            url = 'https://nominatim.openstreetmap.org/search/' + urllib.parse.quote('Porto Cervo') + '?format=json'
+
+        elif place == 'The Black Forest':
+            url = 'https://nominatim.openstreetmap.org/search/' + urllib.parse.quote('Titisee-Neustadt') + '?format=json'
+
+        elif place == 'Mount Etna':
+            url = 'https://nominatim.openstreetmap.org/search/' + urllib.parse.quote('Ätna') + '?format=json'
+
+        elif place == 'Provence':
+            url = 'https://nominatim.openstreetmap.org/search/' + urllib.parse.quote('Saint-Tropez') + '?format=json'
+
+        elif place == 'Plaza de Armas':
+            url = 'https://nominatim.openstreetmap.org/search/' + urllib.parse.quote('Cusco') + '?format=json'
+
+        elif place == 'Santa Fe':
+            url = 'https://nominatim.openstreetmap.org/search/' + urllib.parse.quote('Santa Fe USA') + '?format=json'
+
+        elif place == 'The Florida Keys':
+            url = 'https://nominatim.openstreetmap.org/search/' + urllib.parse.quote('Key West') + '?format=json'
+
+        elif place == 'The Capital Region':
+            url = 'https://nominatim.openstreetmap.org/search/' + urllib.parse.quote('Washington') + '?format=json'
+
+        elif place == 'The Big Island':
+            url = 'https://nominatim.openstreetmap.org/search/' + urllib.parse.quote('Hawaii') + '?format=json'
+
+        elif 'Azur' in place:
+            url = 'https://nominatim.openstreetmap.org/search/' + urllib.parse.quote('Nizza') + '?format=json'
+
+        else:
+            url = 'https://nominatim.openstreetmap.org/search/' + urllib.parse.quote(place) + '?format=json'
+
+        response = requests.get(url).json()
+        lat.append(response[0]["lat"])
+        lon.append(response[0]["lon"])
+
+    except IndexError:
+        print('Error')
+
+df_mapping['lat'] = lat
+df_mapping['lon'] = lon
+
+print(df_mapping)
 
 
-df = px.data.tips()
-
-
-"""         Dashboard           """
+######################## APP LAYOUT ####################################################################################
 # Initialize app
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY],
                 meta_tags=[{"name": "viewport", "content": "width=device-width, initial-scale=1"},],)
@@ -47,32 +129,40 @@ app.layout = dbc.Container(
                 dbc.Card(
                     style={"padding":"1%"},
                     children=[
-        #style={"text-align":"center","height":"40%"},
-                        dbc.Row(#id="clustering_model",
-                            children=[
+                        dbc.Row(children=[
                                 html.Div(
                                     id="clustering_heading",
                                     children="Clustering Model", style={"text-align":"center"}
                                         ),
                                 dbc.Col(
                                     width = 3,
-                                    #id="clustering_filters",
                                     children=[
                                         html.Div(
                                             children=[
                                                 html.Div(id="clustering_dropdown_div",
                                                     children=[
-                                                        dcc.RadioItems(
+                                                        dcc.Dropdown(
                                                             options=clustering_model_list,
-                                                            #placeholder='Select clustering algorithm',
-                                                            id='dropdown_clustering'
-                                                            )
+                                                            value=clustering_model_list[0],
+                                                            id='dropdown_clustering',
+                                                            style = {'color': 'black'}
+                                                            ),
+                                                        dcc.Dropdown(
+                                                            options=['Placeholder'],
+                                                            id='dropdown_cluster',
+                                                            style={'visibility': 'hidden', 'color': 'black'},
+                                                            ),
+
                                                         ]
 
                                                     )
                                                 ]
                                             ),
-                                        html.Div(id="clustering_div")
+                                        html.Div(id="clustering_div"),
+                                        dbc.Card(dcc.RadioItems(options=['Wordcloud', 'Map'],
+                                                       value='Wordcloud',
+                                                       id='vis-change'), style={'background-color': '#4e4f50'})
+
                                     ]
                                 ),
                                 dbc.Col(
@@ -96,15 +186,13 @@ app.layout = dbc.Container(
                 dbc.Card(
                     style={"padding":"1%"},
                     children=[
-                        dbc.Row(#id="topic_model",
-                             children=[
+                        dbc.Row(children=[
                                  html.Div(
                                      id="topic_heading",
                                      children="Topic Model", style={"text-align": "center"}
                                  ),
                                  dbc.Col(
                                      width=3,
-                                     #style={"display": "inline-block", "width": "30%"},
                                      id="topic_filters",
                                      children=[
                                          html.Div(
@@ -113,22 +201,25 @@ app.layout = dbc.Container(
                                                           children=[
                                                               dcc.Dropdown(
                                                                   options=topic_model_list,
-                                                                  placeholder='Select topic modeling algorithm',
-                                                                  id='dropdown_topic'
-                                                              )
+                                                                  value=topic_model_list[0],
+                                                                  id='dropdown_topic',
+                                                                  style = {'color': 'black'}
+                                                              ),
+                                                              dcc.Dropdown(
+                                                                  options=clustering_model_list,
+                                                                  value=clustering_model_list[0],
+                                                                  id='dropdown_topic_cluster',
+                                                                  style = {'color': 'black'}
+                                                              ),
                                                           ]
 
                                                           )
                                              ]
                                          ),
-                                         html.Div(
-                                             id="topic_model_selected", children=[]
-                                             )
                                      ]
                                  ),
                                  dbc.Col(
                                      width=9,
-                                     #style={"display": "inline-block", "width": "70%", "background-color": "black"},
                                      children=[
                                          html.Div(id="topic_graph_div",
                                                   style={"background-color": "black"},
@@ -153,16 +244,13 @@ app.layout = dbc.Container(
                 dbc.Card(
                     style={"padding":"1%"},
                     children=[
-        #style={"text-align":"center","height":"40%"},
-                        dbc.Row(#id="dream_destination_finder_div",
-                                 children=[
+                        dbc.Row(children=[
                                      html.Div(
                                          id="dream_destination_finder_heading",
                                          children="Dream Destination Finder", style={"text-align": "center"}
                                                                               ),
                                      dbc.Col(
                                          width=3,
-                                         #style={"display": "inline-block", "width": "30%"},
                                          id="ddf_filters",
                                          children=[
                                              html.Div(
@@ -198,15 +286,13 @@ app.layout = dbc.Container(
                                                               )
                                                  ]
                                              ),
-                                             html.Div(
-                                                 id="ddf_container", children=[])
+                                             html.Button('Find the dream destination!', id='go', n_clicks=0),
                                          ]
                                      ),
                                      dbc.Col(
                                          width=9,
-                                         #style={"display": "inline-block", "width": "70%"},
                                          children=[
-                                             html.Div(id="ddf_graph_div", children="Please start the dream destination finder!")
+                                             html.Div(id="ddf_graph_div", children=html.Div("Please start the dream destination finder!", style={'text-align':'center', 'padding':'20%'}))
                                          ]
                                      )
 
@@ -219,15 +305,13 @@ app.layout = dbc.Container(
                 dbc.Card(
                     style={"padding":"1%"},
                     children=[
-                        dbc.Row(#id="fourth_visualization",
-                                 children=[
+                        dbc.Row(children=[
                                      html.Div(
                                          id="4v_heading",
                                          children="Dream Destination Mapping", style={"text-align": "center"}
                                      ),
                                      dbc.Col(
                                          width=3,
-                                         #style={"display": "inline-block", "width": "30%"},
                                          id="4v_filters",
                                          children=[
                                              html.Div(
@@ -236,7 +320,7 @@ app.layout = dbc.Container(
                                                               children=[
                                                                   dcc.Checklist(
                                                                       options=[{"label": "label", "value": "value"}],
-                                                                      #placeholder='XXX',
+                                                                      style={'visibility': 'hidden'},
                                                                       id='4v_topic'
                                                                   )
                                                               ]
@@ -248,10 +332,9 @@ app.layout = dbc.Container(
                                      ),
                                      dbc.Col(
                                          width=9,
-                                         #style={"display": "inline-block", "width": "70%"},
                                          children=[
                                              html.Div(id="ddacm_graph_div",
-                                                      children="Please start the dream destination finder!", style={'text-align':'center'}
+                                                      children=html.Div("Please start the dream destination finder!", style={'text-align':'center', 'padding':'20%'}),
                                                       )
                                          ]
                                      )
@@ -269,108 +352,283 @@ app.layout = dbc.Container(
 
 ])
 
-"""         Dashboard           """
-# Callback Clustering Model
+
+######################## CALLBACKS #####################################################################################
+
 @app.callback(
-    [Output(component_id= "topic_model_selected", component_property="children"),
-     Output(component_id= "topic_graph_div", component_property="children")],
-    Input(component_id="dropdown_topic", component_property="value")
+    Output(component_id= "topic_graph_div", component_property="children"),
+    [Input(component_id="dropdown_topic", component_property="value"),
+     Input(component_id="dropdown_topic_cluster", component_property="value")],
 )
-def update_graph_topic(option_chosen):
-    output=option_chosen
-    return output, dcc.Graph(figure=px.scatter(template="plotly_dark"))
+def update_graph_topic(option_chosen, model):
+    """ Updates the topic graph based on the input in the two dropdowns
+
+    """
+
+    if option_chosen == 'LDA':
+        mds = MDS(n_components=2, random_state = 2).fit_transform(df_lda)
+    elif option_chosen == 'LSA':
+        mds = MDS(n_components=2, random_state = 2).fit_transform(df_lsa)
+
+    df_mds = pd.DataFrame(mds, columns=['x','y'])
+
+    name, row = model.split(' ')
+    row = int(row)
+
+    df_mds['cluster'] = df_cluster.loc[row, 'labels']
+    df_mds['cluster'] = df_mds['cluster'].astype(str)
+    df_mds['place'] = df_mapping['Place']
+
+    fig=px.scatter(df_mds, x='x', y='y', color="cluster", hover_data=['place'], template="plotly_dark",
+                                       color_discrete_sequence=px.colors.qualitative.Alphabet,)
+    fig.update_layout(legend_traceorder="normal")
+
+    return dcc.Graph(figure=fig)
 
 
-# Callback Topic Model - wordcloud
+@app.callback(
+    [Output(component_id= "dropdown_cluster", component_property="options"),
+     Output(component_id= "dropdown_cluster", component_property="value"),
+     Output(component_id= "dropdown_cluster", component_property="style")],
+    Input(component_id="dropdown_clustering", component_property="value")
+)
+def create_options(model):
+    """ Creates options to choose between different clusters
+
+    """
+
+    name, row = model.split(' ')
+    row = int(row)
+    clusters = np.unique(df_cluster.loc[row, 'labels'])
+
+    options = []
+    for ele in clusters:
+        options.append('Cluster '+str(ele))
+
+    print(options)
+
+    return options, options[0], {'visibility': 'visible', 'color': 'black'}
+
+
 @app.callback(
     [Output(component_id= "clustering_graph", component_property="figure"),
     Output(component_id= "clustering_div", component_property="children")],
-    Input(component_id="dropdown_clustering", component_property="value")
+    [Input(component_id="dropdown_cluster", component_property="value"),
+    Input(component_id="dropdown_clustering", component_property="value"),
+    Input(component_id="vis-change", component_property="value")],
 )
-def create_wordcloud(topic_model):
-    input_wordcloud = "bear cat dog animal bird fish shark seehorse monkey dolphin elephant fox"
-    wordcloud = WordCloud(height=500, width=600, background_color="#0e1012").generate(input_wordcloud)
-    #plt.figure(figsize=(2,1))
-    plt.imshow(wordcloud, interpolation="bilinear")
-    plt.axis("off")
-    wordcloud_img = px.imshow(wordcloud, template="plotly_dark").update_xaxes(visible=False).update_yaxes(visible=False)
-    wordcloud_img.update_layout(margin={"l": 0, "r": 0, "t": 0, "b": 0}, hovermode=False)
-    return wordcloud_img, str(topic_model)
+def create_wordcloud(cluster, model, vis):
+    """ Updates the cluster graph and the div based on the input in the two dropdowns
+
+    """
+
+    name, row = model.split(' ')
+    row = int(row)
+    clusters = df_cluster.loc[row, 'labels']
 
 
-# Callback Dream  Destination Finder
+    if vis == 'Wordcloud':
+        name, cluster_nr = cluster.split(' ')
+        cluster_nr = int(cluster_nr)
+
+        path = df_cluster.loc[row, 'train_data']
+        df_train = pd.read_csv(path, index_col=0)
+        df_train['cluster'] = clusters
+
+        df_slice = df_train[df_train['cluster']==cluster_nr]
+        places = df_slice['Place']
+        df_slice.drop(['Place','cluster'],inplace=True,axis='columns')
+
+        text_dict = {}
+        print(df_slice)
+
+        if 'TFIDF' not in path:
+            for col in df_slice.columns:
+                text_dict[col] = 0
+                for row in df_slice[col]:
+                    text_dict[col] = row
+
+            text_dict = {x: y for x, y in text_dict.items() if y != 0}
+
+        else:
+            for col in df_slice.columns:
+                text_dict[col] = np.mean(df_slice[col].to_list())
+
+            text_dict = {x: y for x, y in text_dict.items() if ~np.isnan(y)}
+
+        wordcloud = WordCloud(height=500, width=600, background_color="#0e1012").generate_from_frequencies(text_dict)
+        #plt.figure(figsize=(2,1))
+        plt.imshow(wordcloud, interpolation="bilinear")
+        plt.axis("off")
+        wordcloud_img = px.imshow(wordcloud, template="plotly_dark").update_xaxes(visible=False).update_yaxes(visible=False)
+        wordcloud_img.update_layout(margin={"l": 0, "r": 0, "t": 0, "b": 0}, hovermode=False)
+
+        list_output = []
+        list2_output = []
+        for col in df_cluster.columns:
+            try:
+                is_nan = ~np.isnan(df_cluster.loc[row, col])
+            except:
+                is_nan = True
+            if col not in ['train_data', 'labels'] and is_nan:
+                list2_output.append(html.Div(col+': '+str(df_cluster.loc[row, col])),)
+        list_output.append(dbc.Card(list2_output, style={'background-color': '#565656'}),)
+        list_output.append(dbc.Card('Places:    '+', '.join(places),style={'background-color': '#474848'}),)
+
+        return wordcloud_img, list_output
+
+    elif vis == 'Map':
+        df_mapping['clusters'] = clusters
+        df_mapping['clusters'] = df_mapping['clusters'].astype('str')
+
+        place_categories = np.unique(df_mapping['clusters'])
+        cluster_color_dict = dict()
+
+        for ele in range(len(place_categories)):
+            cluster_color_dict[place_categories[ele]] = px.colors.qualitative.Alphabet[ele]
+
+        df_mapping['color'] = df_mapping['clusters'].replace(to_replace=cluster_color_dict)
+
+        fig = go.Figure(go.Scattermapbox(
+            mode="markers+text",
+            lon=df_mapping['lon'], lat=df_mapping['lat'],
+            customdata=np.stack((df_mapping['Place'], df_mapping['clusters']), axis=-1),
+            hovertemplate='<b>Place: %{customdata[0]}</b><br>Cluster: %{customdata[1]}</br><extra></extra>',
+            marker=dict(showscale=True,
+                    color=df_mapping['color'],
+                    opacity=0.5,size= 10),
+            text=df_mapping['Place'], textposition="bottom right"),
+
+        )
+
+        fig.update_layout(
+            mapbox={
+                'accesstoken': token,
+                'style': "dark",
+                # 'zoom': 0.7
+            },
+            showlegend=False,
+            template="plotly_dark")
+
+        fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
+
+        list_output = []
+        list2_output = []
+        for col in df_cluster.columns:
+            try:
+                is_nan = ~np.isnan(df_cluster.loc[row, col])
+            except:
+                is_nan = True
+            if col not in ['train_data', 'labels'] and is_nan:
+                list2_output.append(html.Div(col+': '+str(df_cluster.loc[row, col])),)
+        list_output.append(dbc.Card(list2_output, style={'background-color': '#565656'}),)
+
+        return fig, list_output
+
+
 @app.callback(
-    [Output(component_id= "ddf_container", component_property="children"),
-     Output(component_id="ddf_graph_div", component_property="children")],
-    [Input(component_id="input_Jennifer", component_property="value"),
-     Input(component_id="input_Henry", component_property="value"),
-     Input(component_id="input_Samuel", component_property="value"),
-     Input(component_id="input_Tim", component_property="value")]
+    [Output(component_id="ddf_graph_div", component_property="children"),
+     Output(component_id= "4v_topic", component_property="options"),
+     Output(component_id= "4v_topic", component_property="value"),
+     Output(component_id= "4v_topic", component_property="style")],
+     Input(component_id= "go", component_property="n_clicks"),
+    [State(component_id="input_Jennifer", component_property="value"),
+     State(component_id="input_Henry", component_property="value"),
+     State(component_id="input_Samuel", component_property="value"),
+     State(component_id="input_Tim", component_property="value")]
 )
-def update_graph(preference_Jennifer, preference_Henry, preference_Samuel, preference_Tim):
-    preferences = []
-    preferences.append(preference_Jennifer)
-    preferences.append(preference_Henry)
-    preferences.append(preference_Samuel)
-    preferences.append(preference_Tim)
-    print(type(preferences))
-    print(preferences)
-    token = "pk.eyJ1IjoiYXN6ZW5pYSIsImEiOiJjbDRtZHg1aTExMjIzM29ueGZ3aHB6ZXZsIn0.ehBctjUFzibYKM8zjueniw"  # you need your own token
+def update_graph(clicks, preference_Jennifer, preference_Henry, preference_Samuel, preference_Tim):
+    """ Creates from the input preferences the dream destinations and updates the output graph and div
 
-    fig = go.Figure(go.Scattermapbox(
-        mode="markers+text",
-        lon=[-86.84656, 13.404954], lat=[21.17429, 52.520008],
-        marker={'size': 10, 'symbol': ["airport", "airport"]},
-        text=['Cancun', 'Berlin'], textposition="bottom right"))
+    """
 
-    fig.update_layout(
-        mapbox={
-            'accesstoken': token,
-            'style': "dark",
-            #'zoom': 0.7
-    },
-        showlegend=False,
-        template="plotly_dark")
-    fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
-    #px.set_mapbox_access_token()
-    #df = pd.DataFrame({'centroid_lat': [21.17429, 52.520008], 'centroid_lon': [-86.84656, 13.404954], 'place': ['Cancun', 'Berlin']})
-    #fig = px.scatter_mapbox(df, lat="centroid_lat", lon="centroid_lon", hover_name="place", template="plotly_dark")
-                            #color_continuous_scale=px.colors.cyclical.IceFire, size_max=15, zoom=10,
-    return preferences, dcc.Graph(figure=fig)
+    if clicks != 0:
+        preferences = []
+        preferences.append(preference_Jennifer)
+        preferences.append(preference_Henry)
+        preferences.append(preference_Samuel)
+        preferences.append(preference_Tim)
+
+        #ToDo start finder
+
+        top3_destinations = ['Waikiki', 'Santander', 'Ibiza']
+
+        df_slice = df_mapping[df_mapping['Place'].isin(top3_destinations)]
+
+        print(df_slice)
+
+        fig = go.Figure(go.Scattermapbox(
+            mode="markers+text",
+            lon=df_slice['lon'], lat=df_slice['lat'],
+            marker={'size': 10, 'symbol': "airport"},
+            text=df_slice['Place'], textposition="bottom right"))
+
+        fig.update_layout(
+            mapbox={
+                'accesstoken': token,
+                'style': "dark",
+                # 'zoom': 0.7
+            },
+            showlegend=False,
+            template="plotly_dark")
+        fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
+
+        options = []
+        values = []
+
+        for child in top3_destinations:
+            options.append({'label': child, 'value': child})
+            values.append(child)
+
+        return dcc.Graph(figure=fig), options, values, {'visibility': 'visible','color': 'black'}
+
+    else:
+        raise PreventUpdate
 
 
-# Callback Dream Destination Filters
-@app.callback(
-    Output(component_id= "4v_topic", component_property="options"),
-    Input(component_id="ddf_container", component_property="children"),
-
-
-)
-def update_options(children):
-
-    options = []
-
-    for child in children:
-        options.append({'label' : child, 'value' : child})
-    return options
-
-
-# Callback Dream  Destination Mapper
 @app.callback(
     Output(component_id= "ddacm_graph_div", component_property="children"),
     Input(component_id="4v_topic", component_property="value")
 
 )
 def update_graph_mapper(values):
-    df = pd.DataFrame(
-        {'attraction': ['Food', 'Animal', 'Landscape', 'Food', 'Animal', 'Landscape'], 'count': [1,2,3,4,5,6], 'place': ['Cancun','Cancun','Cancun', 'Berlin', 'Berlin', 'Berlin']})
-    fig = px.histogram(df, x="attraction", y="count",
-                 color='place', barmode='group',template="plotly_dark")
-    return dcc.Graph(figure=fig)
+    """ Updates the mapping graph based on the dream destination
+
+    """
+
+    if values != None:
+        print(values)
+
+        df_slice = df_mapping[df_mapping['Place'].isin(values)][['Place', 'no_NE_attractions']]
+
+        df = pd.DataFrame()
+        indx = 0
+        for index, row in df_slice.iterrows():
+            dictio = {}
+            setio = set(row['no_NE_attractions'])
+            print(setio)
+            for ele in setio:
+
+                if ele[1] in dictio.keys():
+                    dictio[ele[1]] = dictio[ele[1]] + 1
+                else:
+                    dictio[ele[1]] = 1
+
+            for key in dictio:
+                df.loc[indx, 'attraction'] = key
+                df.loc[indx, 'count'] = dictio[key]
+                df.loc[indx, 'place'] = row['Place']
+                indx += 1
+
+        fig = px.histogram(df, x="attraction", y="count",
+                     color='place', barmode='group',template="plotly_dark")
+        return dcc.Graph(figure=fig)
+
+    else:
+        raise PreventUpdate
 
 
-
-
+######################## RUN APP #######################################################################################
 
 if __name__ == "__main__":
     app.run_server(debug=True)
