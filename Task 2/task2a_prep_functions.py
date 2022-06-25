@@ -939,9 +939,11 @@ def get_hypernyms(column):
             synsets_list = wordnet.synsets(sentence)
 
             if synsets_list != [] and not sentence in ['home', 'place', 'site', 'spot', 'stretch', 'food', 'de', 'la']:
-                synset_all_list=[]
-                for i in synsets_list:
-                    synset_all_list.extend(i.hypernym_paths())
+                synset_all_list = synsets_list[0].hypernym_paths()
+
+                #synset_all_list=[]
+                #for i in synsets_list:
+                #    synset_all_list.extend(i.hypernym_paths())
 
                 synset_flat_list = []
 
@@ -956,7 +958,13 @@ def get_hypernyms(column):
                         print(i)
                         continue
 
-                    if type == 'n':
+                    #if type == 'n':
+                    #    synset_flat_list_names.append(name)
+
+                    if type != 'n':
+                        synset_flat_list_names = []
+                        break
+                    else:
                         synset_flat_list_names.append(name)
 
                 if synset_flat_list_names != []:
@@ -1007,6 +1015,7 @@ def transaction_encoding(column):
         
     te = TransactionEncoder()
     te_ary = te.fit(transactions).transform(transactions)
+    te_ary = te_ary.astype("int")
     df = pd.DataFrame(te_ary, columns=te.columns_)
     
     return df
@@ -1105,6 +1114,26 @@ def create_n_grams_to_list(column, length):
         n_grams_list.append(n_grams)
 
     return n_grams_list
+
+
+def grams_to_string(column):
+    """ Reforms the tuple grams to strings
+
+    Args:
+        column: Column containing the grams tuples
+
+    Returns:
+        List -> List with strings
+
+    """
+
+    liste = []
+
+    for ele in column:
+        listi = ['_'.join(x) for x in ele]
+        liste.append(listi)
+
+    return liste
 
 
 def dataframe_for_training(encoded_frame, *args):

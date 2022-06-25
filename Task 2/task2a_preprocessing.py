@@ -1,5 +1,6 @@
 import task2a_prep_functions as p
 import pandas as pd
+import numpy as np
 
 
 class Preprocessing:
@@ -169,7 +170,8 @@ class Preprocessing:
 
         """
 
-        self.__df['grams'] = self.__df['no_NE_attractions_plain_unique_dict']
+        self.__df['grams'] = self.__df['no_NE_attractions_plain']
+        self.__df['grams_unique'] = self.__df['no_NE_attractions_plain_unique']
 
 
     def __create_two_grams(self):
@@ -180,7 +182,8 @@ class Preprocessing:
 
         """
 
-        self.__df['grams'] = p.create_n_grams_to_list(self.__df['no_NE_attractions_plain_unique_dict'], 2)
+        self.__df['grams'] = p.grams_to_string(p.create_n_grams_to_list([self.__df['no_NE_attractions_plain']], 2)[0])
+        self.__df['grams_unique'] = p.grams_to_string(p.create_n_grams_to_list([self.__df['no_NE_attractions_plain_unique']], 2)[0])
 
 
     def __create_mixed_grams(self):
@@ -191,7 +194,9 @@ class Preprocessing:
 
         """
 
-        self.__df['grams'] = self.__df['no_NE_attractions_plain_unique_dict']+p.create_n_grams_to_list(self.__df['no_NE_attractions_plain_unique_dict'], 2)
+        self.__df['grams'] = self.__df['no_NE_attractions_plain'].to_numpy()+np.array(p.grams_to_string(p.create_n_grams_to_list([self.__df['no_NE_attractions_plain']], 2)[0]))
+        self.__df['grams_unique'] = self.__df['no_NE_attractions_plain_unique'].to_numpy() + np.array(
+            p.grams_to_string(p.create_n_grams_to_list([self.__df['no_NE_attractions_plain_unique']], 2)[0]))
 
 
     def __create_true_false_matrix(self):
@@ -216,6 +221,20 @@ class Preprocessing:
         """
 
         token_string_list = p.list_to_string(self.__df["grams"])
+        self.__df["tokens_string"] = [x.replace(" ", "_") for x in token_string_list]
+        df_matrix = p.use_tfidfVectorizer(self.__df["tokens_string"])
+        df_matrix = p.dataframe_for_training(df_matrix, self.__df["Place"])
+        return df_matrix
+
+    def __create_tfidf_matrix_unique(self):
+        """ Generation of a TFIDF matrix for the unique tokens in the documents
+
+        Returns:
+            None
+
+        """
+
+        token_string_list = p.list_to_string(self.__df["grams_unique"])
         self.__df["tokens_string"] = [x.replace(" ", "_") for x in token_string_list]
         df_matrix = p.use_tfidfVectorizer(self.__df["tokens_string"])
         df_matrix = p.dataframe_for_training(df_matrix, self.__df["Place"])
@@ -270,6 +289,8 @@ class Preprocessing:
 
         if train_matrix == 'TFIDF':
             return self.__create_tfidf_matrix()
+        elif train_matrix == 'TFIDF_unique':
+            return self.__create_true_false_matrix()
         elif train_matrix == 'True/False':
             return self.__create_true_false_matrix()
         else:
