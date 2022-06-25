@@ -10,6 +10,7 @@ from os.path import join
 from datetime import date
 from wordcloud import WordCloud
 from pprint import pprint
+from scipy import spatial
 
 import gensim
 from gensim.utils import simple_preprocess
@@ -39,7 +40,7 @@ def data_cleaning(data):
     data["content"] = data["Place"] + '. ' + data["Content"]
 
     # remove the not needed columns from dataframe
-    data = data.loc[:, ['content']].copy()
+    data = data.loc[:, ['Place', 'content']].copy()
 
     # remove punctuation
     data['content_processed'] = data['content'].map(lambda x: re.sub('[,\.!?]', '', x))
@@ -168,6 +169,7 @@ def analyze_and_save_model(lda_model, corpus, id2word, num_topics, alpha, eta, d
     with open(f'../results/{model_name}/lda_vis_prepared_' + str(num_topics) + f'_alpha{alpha}_beta{eta}_scores.txt', 'w') as f:
         f.write(f'Perplexity: {perplexity}\n')
         f.write(f'Coherence Score: {coherence_lda}\n')
+        f.close()
 
     # calculate score for each topic per document
     def get_doc_topic(corpus, model):
@@ -186,9 +188,33 @@ def analyze_and_save_model(lda_model, corpus, id2word, num_topics, alpha, eta, d
     matrix_df.to_csv(f'../results/{model_name}/lda_vis_prepared_' + str(num_topics) +
                      f'_alpha{alpha}_beta{eta}_matrix.csv', index=False, header=False)
 
+    return matrix_df
 
-def predict(lda_model, text):
-    #result_df = ...text...
+
+def predict(lda_model, matrix_df, input, data):
+    # get place of the closest document for each word
+    # transform svd matrix to spacial KDtree
+    tree = spatial.KDTree(matrix_df)
+
+    # transform words with dict to bow
+    input_bow = [id2word.doc2bow(words) for words in input]
+
+    input_topics = lda_model.__getitem__(input_bow)
+    # reformat to keep just values in tuples
+    input_vecs = []
+    for line in input_topics:
+        input_vecs.append([y[1] for y in line])
+
+    # get closest document vector for each word vector
+    with open(
+            f'../results/{model_name}/lda_vis_prepared_' + str(num_topics) + f'_alpha{alpha}_beta{eta}_prediction.txt',
+            'w') as f:
+        for i, input_vec in enumerate(input_vecs):
+            query = tree.query(input_vec)
+            # save prediction to LDA Model results directory
+            f.write(f'{input[i]} > "{data.Place[query[1]]}" - Distance: {query[0]}\n')
+        f.close()
+
     return
 
 
@@ -248,12 +274,12 @@ if __name__ == '__main__':
 
         # Step 6: Analyzing trained LDA model #
         # analyzing and saving trained model results
-        analyze_and_save_model(model, corpus, id2word, num_topics, alpha, eta, data_lemmatize, model_name)
+        matrix_df = analyze_and_save_model(model, corpus, id2word, num_topics, alpha, eta, data_lemmatize, model_name)
 
         # Step 7: Predicting with LDA model and test accuracy#
         # predict on trained model and save results
-        #text = ...
-        #df = predict(model, text)
+        text = [['sun', 'beach'], ['city', 'town'], ['mountain', 'hiking']]
+        predict(model, matrix_df, text, prep_data)
 
         print('Finished!')
     print("Training and analyzing of Model's done!")
