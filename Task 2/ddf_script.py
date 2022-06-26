@@ -26,7 +26,7 @@ dt_matrix = np.genfromtxt('output/lsa_example_matrix.csv', delimiter=',')
 dictionary = SaveLoad.load('dictionary/dict_test')
 print(f'dictionary: {dictionary}')
 # dataframe with original data from crawling
-data = pd.read_csv('../data/results_df_prep.csv')
+data = pd.read_csv('output/mapping_data_lemma.csv')
 
 
 def preprocess_string(string):

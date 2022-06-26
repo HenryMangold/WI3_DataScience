@@ -480,22 +480,22 @@ def create_wordcloud(cluster, model, vis):
 
     elif vis == 'Map':
         df_mapping['clusters'] = clusters
-        df_mapping['clusters'] = df_mapping['clusters'].astype('str')
+        #df_mapping['clusters'] = df_mapping['clusters'].astype('str')
 
-        place_categories = np.unique(df_mapping['clusters'])
-        cluster_color_dict = dict()
+        #place_categories = np.unique(df_mapping['clusters'])
+        #cluster_color_dict = dict()
 
-        for ele in range(len(place_categories)):
-            cluster_color_dict[place_categories[ele]] = px.colors.qualitative.Alphabet[ele]
+        #for ele in range(len(place_categories)):
+        #    cluster_color_dict[place_categories[ele]] = px.colors.qualitative.Alphabet[ele]
 
-        df_mapping['color'] = df_mapping['clusters'].replace(to_replace=cluster_color_dict)
+        #df_mapping['color'] = df_mapping['clusters'].replace(to_replace=cluster_color_dict)
 
         fig = go.Figure(go.Scattermapbox(
             mode="markers+text",
             lon=df_mapping['lon'], lat=df_mapping['lat'],
             customdata=np.stack((df_mapping['Place'], df_mapping['clusters']), axis=-1),
             hovertemplate='<b>Place: %{customdata[0]}</b><br>Cluster: %{customdata[1]}</br><extra></extra>',
-            marker=dict(#color=df_mapping['color'],
+            marker=dict(color=df_mapping['clusters'],
                     opacity=0.5,size= 10),
             text=df_mapping['Place'], textposition="bottom right"),
 
@@ -543,18 +543,14 @@ def update_graph(clicks, preference_Jennifer, preference_Henry, preference_Samue
     """
 
     if clicks != 0:
-        preferences = []
-        preferences.append(preference_Jennifer)
-        preferences.append(preference_Henry)
-        preferences.append(preference_Samuel)
-        preferences.append(preference_Tim)
+        preferences = ' '.join([preference_Jennifer,preference_Henry,preference_Samuel,preference_Tim])
 
-        df_destinations = dfs.find_dream_destination()
+        df_destinations = dfs.find_dream_destination(preferences)
 
-        top3_destinations = df_destinations.iloc[-3:,:]
+        top3_destinations = df_destinations.iloc[:3,:]
 
         df_slice = df_mapping[df_mapping['Place'].isin(top3_destinations['place'])]
-        df_slice['score'] = top3_destinations['total_score']
+        df_slice['score'] = top3_destinations['total_score'].astype(str)
 
         print(df_slice)
 
@@ -562,7 +558,7 @@ def update_graph(clicks, preference_Jennifer, preference_Henry, preference_Samue
             mode="markers+text",
             lon=df_slice['lon'], lat=df_slice['lat'],
             marker={'size': 10, 'symbol': "airport"},
-            text=df_slice['Place']+df_slice['score'], textposition="bottom right"))
+            text=df_slice['Place']+': '+df_slice['score'], textposition="bottom right"))
 
         fig.update_layout(
             mapbox={
@@ -577,7 +573,7 @@ def update_graph(clicks, preference_Jennifer, preference_Henry, preference_Samue
         options = []
         values = []
 
-        for child in top3_destinations:
+        for child in top3_destinations['place']:
             options.append({'label': child, 'value': child})
             values.append(child)
 

@@ -158,6 +158,7 @@ class Preprocessing:
         self.__df_mapping['no_NE_attractions_plain'] = plain
         self.__df['no_NE_attractions_plain'] = plain
         unique, unique_dict = p.unique_and_dict_count(self.__df['no_NE_attractions_plain'])
+        self.__df_mapping['no_NE_attractions_plain_unique'] = unique
         self.__df['no_NE_attractions_plain_unique'] = unique
         self.__df['no_NE_attractions_plain_unique_dict'] = unique_dict
 
