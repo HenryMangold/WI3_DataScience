@@ -188,6 +188,9 @@ def analyze_and_save_model(lda_model, corpus, id2word, num_topics, alpha, eta, d
     matrix_df.to_csv(f'../results/{model_name}/lda_vis_prepared_' + str(num_topics) +
                      f'_alpha{alpha}_beta{eta}_matrix.csv', index=False, header=False)
 
+    # save dictionary to model results
+    id2word.save(f'../results/{model_name}/lda_vis_prepared_' + str(num_topics) + f'_alpha{alpha}_beta{eta}_dictionary')
+
     return matrix_df
 
 
@@ -311,7 +314,7 @@ if __name__ == '__main__':
                 path = f'../results/{directory}/'
                 files = [f for f in listdir(path) if isfile(join(path, f))]
                 for file in files:
-                    if file.endswith('.html') or file.endswith('.txt') or file.endswith('.csv'):
+                    if file.endswith('.html') or file.endswith('.txt') or file.endswith('.csv') or file.endswith('dictionary'):
                         None
                     else:
                         file_counter += 1
