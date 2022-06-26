@@ -215,8 +215,6 @@ def predict(lda_model, matrix_df, input, data):
             f.write(f'{input[i]} > "{data.Place[query[1]]}" - Distance: {query[0]}\n')
         f.close()
 
-    return
-
 
 # Script to train multiple LDA Models with different configurations and show differences in an Excel File #
 if __name__ == '__main__':
@@ -270,7 +268,7 @@ if __name__ == '__main__':
         # defining model name for saving purpose
         today = date.today()
         d1 = today.strftime('%d%m%Y')
-        model_name = f'{d1}_' + f'{num_topics}' + 'topics'
+        model_name = f'lda_{d1}_' + f'{num_topics}' + 'topics'
 
         # Step 6: Analyzing trained LDA model #
         # analyzing and saving trained model results
@@ -287,7 +285,7 @@ if __name__ == '__main__':
     print('Consolidate different model results into an Excel')
     # Step 8: Create Excel File for finding the best configuration variant #
     # merge the different results of configurations into an Excel
-    workbook = xlsxwriter.Workbook('../results/merged.xlsx')
+    workbook = xlsxwriter.Workbook('../results/lda_merged.xlsx')
     worksheet = workbook.add_worksheet()
     # setup columns and their width's
     longest_width_B = 10
@@ -306,34 +304,35 @@ if __name__ == '__main__':
     for base, dirs, files in os.walk('../results/'):
         file_counter = 1
         for directory in dirs:
-            dict_counter = file_counter + 1
-            worksheet.write(('A' + str(dict_counter)), directory.split('_')[1])  # Number of Topics
-            # iterate over files in directory
-            path = f'../results/{directory}/'
-            files = [f for f in listdir(path) if isfile(join(path, f))]
-            for file in files:
-                if file.endswith('.html') or file.endswith('.txt') or file.endswith('.csv'):
-                    None
-                else:
-                    file_counter += 1
-                    text = file.split('_')[4] + file.split('_')[5]
-                    width_B = len(text)
-                    if width_B > longest_width_B:
-                        longest_width_B = width_B
-                    worksheet.write(('B' + str(file_counter)), text)  # Hyperparameter
-                    txt_path = path + file + '_scores.txt'
-                    with open(txt_path) as f:
-                        lines = f.readlines()
-                        f.close()
-                    for i, line in enumerate(lines):
-                        text = (line.split(': ')[1]).strip()
-                        width_CD = len(text)
-                        if width_CD > longest_width_CD:
-                            longest_width_CD = width_CD
-                        if i == 0:
-                            worksheet.write(('C' + str(file_counter)), float(text))  # Perplexity
-                        elif i == 1:
-                            worksheet.write(('D' + str(file_counter)), float(text))  # Coherence Score
+            if directory.startswith('lda'):
+                dict_counter = file_counter + 1
+                worksheet.write(('A' + str(dict_counter)), directory.split('_')[2])  # Number of Topics
+                # iterate over files in directory
+                path = f'../results/{directory}/'
+                files = [f for f in listdir(path) if isfile(join(path, f))]
+                for file in files:
+                    if file.endswith('.html') or file.endswith('.txt') or file.endswith('.csv'):
+                        None
+                    else:
+                        file_counter += 1
+                        text = file.split('_')[4] + file.split('_')[5]
+                        width_B = len(text)
+                        if width_B > longest_width_B:
+                            longest_width_B = width_B
+                        worksheet.write(('B' + str(file_counter)), text)  # Hyperparameter
+                        txt_path = path + file + '_scores.txt'
+                        with open(txt_path) as f:
+                            lines = f.readlines()
+                            f.close()
+                        for i, line in enumerate(lines):
+                            text = (line.split(': ')[1]).strip()
+                            width_CD = len(text)
+                            if width_CD > longest_width_CD:
+                                longest_width_CD = width_CD
+                            if i == 0:
+                                worksheet.write(('C' + str(file_counter)), float(text))  # Perplexity
+                            elif i == 1:
+                                worksheet.write(('D' + str(file_counter)), float(text))  # Coherence Score
         # set column width
         worksheet.set_column(0, 0, longest_width_A)  # column Number of Topics
         worksheet.set_column(1, 1, longest_width_B)  # column Hyperparameter
@@ -352,5 +351,5 @@ if __name__ == '__main__':
     print('Consolidate model results into Excel done!')
 
     print('Script finished!')
-    print(f'> You will find the Excel with the model results in following directory:  ../results/merged.xlsx')
+    print(f'> You will find the Excel with the model results in following directory:  ../results/')
     sys.exit()
