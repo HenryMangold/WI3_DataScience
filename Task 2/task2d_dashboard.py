@@ -18,6 +18,7 @@ from plotly.graph_objs import *
 from datetime import datetime as dt
 import requests
 import urllib.parse
+import ddf_script as dfs
 
 
 ######################## IMPORT AND CLEAN DATA ####################################################################################
@@ -494,8 +495,7 @@ def create_wordcloud(cluster, model, vis):
             lon=df_mapping['lon'], lat=df_mapping['lat'],
             customdata=np.stack((df_mapping['Place'], df_mapping['clusters']), axis=-1),
             hovertemplate='<b>Place: %{customdata[0]}</b><br>Cluster: %{customdata[1]}</br><extra></extra>',
-            marker=dict(showscale=True,
-                    color=df_mapping['color'],
+            marker=dict(#color=df_mapping['color'],
                     opacity=0.5,size= 10),
             text=df_mapping['Place'], textposition="bottom right"),
 
@@ -507,7 +507,7 @@ def create_wordcloud(cluster, model, vis):
                 'style': "dark",
                 # 'zoom': 0.7
             },
-            showlegend=False,
+            #showlegend=True,
             template="plotly_dark")
 
         fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
@@ -549,11 +549,12 @@ def update_graph(clicks, preference_Jennifer, preference_Henry, preference_Samue
         preferences.append(preference_Samuel)
         preferences.append(preference_Tim)
 
-        #ToDo start finder
+        df_destinations = dfs.find_dream_destination()
 
-        top3_destinations = ['Waikiki', 'Santander', 'Ibiza']
+        top3_destinations = df_destinations.iloc[-3:,:]
 
-        df_slice = df_mapping[df_mapping['Place'].isin(top3_destinations)]
+        df_slice = df_mapping[df_mapping['Place'].isin(top3_destinations['place'])]
+        df_slice['score'] = top3_destinations['total_score']
 
         print(df_slice)
 
@@ -561,7 +562,7 @@ def update_graph(clicks, preference_Jennifer, preference_Henry, preference_Samue
             mode="markers+text",
             lon=df_slice['lon'], lat=df_slice['lat'],
             marker={'size': 10, 'symbol': "airport"},
-            text=df_slice['Place'], textposition="bottom right"))
+            text=df_slice['Place']+df_slice['score'], textposition="bottom right"))
 
         fig.update_layout(
             mapbox={

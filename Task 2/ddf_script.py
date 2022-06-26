@@ -21,7 +21,7 @@ nltk.download('stopwords')
 lsa_model = LsiModel.load('models/lsa_model_test')
 print(f'model object: {lsa_model}')
 # load dt_matrix for model
-dt_matrix = np.genfromtxt('lsa_example_matrix.csv', delimiter=',')
+dt_matrix = np.genfromtxt('output/lsa_example_matrix.csv', delimiter=',')
 # dictionary of the topic model
 dictionary = SaveLoad.load('dictionary/dict_test')
 print(f'dictionary: {dictionary}')
