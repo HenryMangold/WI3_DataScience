@@ -4,8 +4,7 @@ import re
 import ast
 from scipy import spatial
 
-from gensim.models import LsiModel
-from gensim import corpora
+from gensim.models import LdaMulticore
 from gensim.utils import SaveLoad
 from gensim.utils import simple_preprocess
 import task2a_prep_functions as prep
@@ -18,12 +17,12 @@ nltk.download('stopwords')
 
 # load required data
 # Topic model
-lsa_model = LsiModel.load('models/lsa_model_test')
-print(f'model object: {lsa_model}')
+model = LdaMulticore.load('models/lda_vis_prepared_25_alphaFalse_betaFalse_model')
+print(f'model object: {model}')
 # load dt_matrix for model
-dt_matrix = np.genfromtxt('output/lsa_example_matrix.csv', delimiter=',')
+dt_matrix = np.genfromtxt('output/lda_vis_prepared_25_alphaFalse_betaFalse_matrix.csv', delimiter=',')
 # dictionary of the topic model
-dictionary = SaveLoad.load('dictionary/dict_test')
+dictionary = SaveLoad.load('dictionary/lda_vis_prepared_25_alphaFalse_betaFalse_dictionary')
 print(f'dictionary: {dictionary}')
 # dataframe with original data from crawling
 data = pd.read_csv('output/mapping_data_lemma.csv')
@@ -69,13 +68,12 @@ def find_dream_destination(input):
 
     # Preprocessing of input string
     input_prep = preprocess_string(input)
-    print(input_prep)
 
     # transform words with dict to bow
     input_bow = dictionary.doc2bow(input_prep)
 
     # generate topic vector for inputs and reformat
-    input_topics = lsa_model.__getitem__(input_bow)
+    input_topics = model.__getitem__(input_bow, eps=0)
     input_vec = [y[1] for y in input_topics]
 
     # get closest document vector for each word vector
@@ -87,7 +85,6 @@ def find_dream_destination(input):
     # CALCULATE NO-NE SCORES
     # extract No-NEs from input string
     _void, no_ne_list = prep.get_hypernyms([input_prep])
-    print(no_ne_list)
     # search for no-ne attractions in documents and get a count for them
     no_ne_count = [0] * 100
     for no_nes in no_ne_list:

@@ -29,8 +29,8 @@ TEAM_MEMBERS = (
 token = "pk.eyJ1IjoiYXN6ZW5pYSIsImEiOiJjbDRtZHg1aTExMjIzM29ueGZ3aHB6ZXZsIn0.ehBctjUFzibYKM8zjueniw"  # you need your own token
 
 #Topic Modelling
-df_lsa = pd.read_csv('output/lsa_example_matrix.csv', header= None)
-df_lda = pd.read_csv('output/lda_example_matrix.csv', header= None)
+df_lsa = pd.read_csv('output/lsa_vis_prepared_5_matrix.csv', header= None)
+df_lda = pd.read_csv('output/lda_vis_prepared_25_alphaFalse_betaFalse_matrix.csv', header= None)
 topic_model_list = ["LSA", "LDA"]
 
 #Clustering
